@@ -1,4 +1,4 @@
-# Gitlab Packagist
+# Gitlab Registry composer
 
 This tool fetches all branches, tags of configured repositories and provides a Packagist API.
 
