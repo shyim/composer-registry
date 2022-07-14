@@ -1,4 +1,4 @@
-module gitlab-packagist
+module github.com/shyim/composer-registry
 
 go 1.18
 
