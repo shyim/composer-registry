@@ -5,14 +5,18 @@ import (
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strings"
 )
+
+var config *Config
 
 func main() {
 	router := httprouter.New()
 	router.GET("/packages.json", packagesJsonHandler)
 	router.POST("/webhook/:name", webhookHandler)
 
-	config, err := LoadConfig()
+	var err error
+	config, err = LoadConfig()
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -51,6 +55,24 @@ func webhookHandler(writer http.ResponseWriter, request *http.Request, ps httpro
 func packagesJsonHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
+
+	token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
+
+	if len(config.Users) != 0 {
+		found := false
+
+		for _, user := range config.Users {
+			if token == user.Token {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+	}
 
 	err := json.NewEncoder(w).Encode(map[string]interface{}{"packages": packages})
 	if err != nil {

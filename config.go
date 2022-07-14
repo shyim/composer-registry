@@ -5,8 +5,13 @@ import (
 	"io/ioutil"
 )
 
+type ConfigUser struct {
+	Token string `yaml:"token"`
+}
+
 type Config struct {
 	Providers []ConfigProvider `yaml:"providers"`
+	Users     []ConfigUser     `yaml:"users"`
 }
 type ConfigProjects struct {
 	Name string `yaml:"name"`

@@ -4,19 +4,26 @@ This tool fetches all branches, tags of configured repositories and provides a P
 
 ## Why?
 
-A many `vcs` repositories are so slow in doing `composer update`
+As many `vcs` repositories are so slow in doing `composer update`
 
 ## Installation
 
 - Build the go project
-- Set following environment variables
+- Create a `config.yml`
 
-Environment variables
+```yaml
+users:
+  - token: test
 
-- `GITLAB_PROJECTS` - List of projects to fetch. Example: `1,2,3,4` (project ids)
-- `GITLAB_TOKEN` - Gitlab private token to talk with API
-- `GITLAB_DOMAIN` - Gitlab domain to talk with API
-- `GITLAB_WEBHOOK_SECRET` - Webhook Secret
+providers:
+  - name: internal-gitlab
+    type: gitlab
+    domain: gitlab.com
+    token: GITLAB_TOKEN
+    webhook_secret: test
+    projects:
+      - name: shopware/6/product/platform
+```
 
 Add following to your `composer.json`
 
@@ -28,7 +35,7 @@ Add following to your `composer.json`
     }
 ],
 "config": {
-    "gitlab-domains": ["gitlab.shopware.com"]
+    "gitlab-domains": ["<GITLAB-DOMAIN>"]
 }
 ```
 
