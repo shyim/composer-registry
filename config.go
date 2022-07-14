@@ -17,12 +17,13 @@ type ConfigProjects struct {
 	Name string `yaml:"name"`
 }
 type ConfigProvider struct {
-	Name          string           `yaml:"name"`
-	Type          string           `yaml:"type"`
-	Domain        string           `yaml:"domain"`
-	Token         string           `yaml:"token"`
-	WebhookSecret string           `yaml:"webhook_secret"`
-	Projects      []ConfigProjects `yaml:"projects"`
+	Name            string           `yaml:"name"`
+	Type            string           `yaml:"type"`
+	Domain          string           `yaml:"domain"`
+	Token           string           `yaml:"token"`
+	WebhookSecret   string           `yaml:"webhook_secret"`
+	Projects        []ConfigProjects `yaml:"projects"`
+	FetchAllOnStart bool             `yaml:"fetch_all_on_start"`
 }
 
 func LoadConfig() (*Config, error) {

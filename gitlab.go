@@ -4,8 +4,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
-	"log"
+	bolt "go.etcd.io/bbolt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -24,6 +25,10 @@ func NewGitlabProvider(provider ConfigProvider) GitlabProvider {
 	}
 
 	return GitlabProvider{Provider: provider, git: git}
+}
+
+func (g GitlabProvider) GetConfig() ConfigProvider {
+	return g.Provider
 }
 
 func (g GitlabProvider) UpdateAll() error {
@@ -58,11 +63,9 @@ func (g GitlabProvider) Webhook(request *http.Request) error {
 		version = strings.ToLower(fmt.Sprintf("dev-%s", strings.TrimPrefix(event.Ref, "refs/heads/")))
 	}
 
-	if err := g.addOrUpdate(strconv.FormatInt(int64(event.ProjectID), 10), version, event.CheckoutSHA); err != nil {
-		return err
-	}
-
-	return nil
+	return db.Update(func(tx *bolt.Tx) error {
+		return g.addOrUpdate(tx, strconv.FormatInt(int64(event.ProjectID), 10), version, event.CheckoutSHA)
+	})
 }
 
 func (g GitlabProvider) updateAllBranches(gitlabId string) error {
@@ -72,31 +75,33 @@ func (g GitlabProvider) updateAllBranches(gitlabId string) error {
 		return err
 	}
 
-	page := 1
+	return db.Batch(func(tx *bolt.Tx) error {
+		page := 1
 
-	for {
-		branches, _, err := g.git.Branches.ListBranches(gitlabId, &gitlab.ListBranchesOptions{
-			ListOptions: gitlab.ListOptions{PerPage: 100, Page: page},
-		})
+		for {
+			branches, _, err := g.git.Branches.ListBranches(gitlabId, &gitlab.ListBranchesOptions{
+				ListOptions: gitlab.ListOptions{PerPage: 100, Page: page},
+			})
 
-		if err != nil {
-			return err
-		}
-
-		for _, branch := range branches {
-			log.Printf("Fetching infos for repo %s and branch: %s\n", gitlabId, branch.Name)
-			if err := g.addOrUpdate(strconv.FormatInt(int64(project.ID), 10), strings.ToLower(fmt.Sprintf("dev-%s", branch.Name)), branch.Commit.ShortID); err != nil {
+			if err != nil {
 				return err
 			}
+
+			for _, branch := range branches {
+				log.Printf("Fetching infos for repo %s and branch: %s\n", gitlabId, branch.Name)
+				if err := g.addOrUpdate(tx, strconv.FormatInt(int64(project.ID), 10), strings.ToLower(fmt.Sprintf("dev-%s", branch.Name)), branch.Commit.ShortID); err != nil {
+					return err
+				}
+			}
+
+			if len(branches) != 100 {
+				break
+			}
+			page = page + 1
 		}
 
-		if len(branches) != 100 {
-			break
-		}
-		page = page + 1
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func (g GitlabProvider) updateAllTags(gitlabId string) error {
@@ -106,34 +111,36 @@ func (g GitlabProvider) updateAllTags(gitlabId string) error {
 		return err
 	}
 
-	page := 1
+	return db.Batch(func(tx *bolt.Tx) error {
+		page := 1
 
-	for {
-		tags, _, err := g.git.Tags.ListTags(gitlabId, &gitlab.ListTagsOptions{
-			ListOptions: gitlab.ListOptions{PerPage: 100, Page: page},
-		})
+		for {
+			tags, _, err := g.git.Tags.ListTags(gitlabId, &gitlab.ListTagsOptions{
+				ListOptions: gitlab.ListOptions{PerPage: 100, Page: page},
+			})
 
-		if err != nil {
-			return err
-		}
-
-		for _, tag := range tags {
-			log.Printf("Fetching infos for repo %s and tag: %s\n", gitlabId, tag.Name)
-			if err := g.addOrUpdate(strconv.FormatInt(int64(project.ID), 10), strings.ToLower(tag.Name), tag.Commit.ShortID); err != nil {
+			if err != nil {
 				return err
 			}
+
+			for _, tag := range tags {
+				log.Printf("Fetching infos for repo %s and tag: %s\n", gitlabId, tag.Name)
+				if err := g.addOrUpdate(tx, strconv.FormatInt(int64(project.ID), 10), strings.ToLower(tag.Name), tag.Commit.ShortID); err != nil {
+					return err
+				}
+			}
+
+			if len(tags) != 100 {
+				break
+			}
+			page = page + 1
 		}
 
-		if len(tags) != 100 {
-			break
-		}
-		page = page + 1
-	}
-
-	return nil
+		return nil
+	})
 }
 
-func (g GitlabProvider) addOrUpdate(pid, version, sha string) error {
+func (g GitlabProvider) addOrUpdate(tx *bolt.Tx, pid, version, sha string) error {
 	file, _, err := g.git.RepositoryFiles.GetFile(pid, "composer.json", &gitlab.GetFileOptions{Ref: &sha})
 
 	if err != nil {
@@ -142,5 +149,5 @@ func (g GitlabProvider) addOrUpdate(pid, version, sha string) error {
 
 	bytes, _ := base64.StdEncoding.DecodeString(file.Content)
 
-	return addOrUpdate(bytes, version, fmt.Sprintf("https://%s/api/v4/projects/%s/repository/archive.zip?sha=%s", g.Provider.Domain, pid, sha))
+	return addOrUpdate(tx, bytes, version, fmt.Sprintf("https://%s/api/v4/projects/%s/repository/archive.zip?sha=%s", g.Provider.Domain, pid, sha))
 }

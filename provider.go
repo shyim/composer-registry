@@ -2,9 +2,8 @@ package main
 
 import "net/http"
 
-var packages = make(map[string]map[string]interface{})
-
 type TypeProvider interface {
+	GetConfig() ConfigProvider
 	UpdateAll() error
 	Webhook(*http.Request) error
 }
