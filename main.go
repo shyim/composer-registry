@@ -79,26 +79,15 @@ func webhookHandler(writer http.ResponseWriter, request *http.Request, ps httpro
 }
 
 func packagesJsonHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user := validateRequest(r)
+
+	if user == nil {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-
-	token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
-
-	if len(config.Users) != 0 {
-		found := false
-
-		for _, user := range config.Users {
-			if token == user.Token {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-	}
 
 	var availablePackagesIndexed = make(map[string]bool)
 
@@ -131,6 +120,13 @@ func packagesJsonHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 }
 
 func singlePackageHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user := validateRequest(r)
+
+	if user == nil {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
 	packageName := fmt.Sprintf("%s/%s", ps.ByName("owner"), ps.ByName("repo"))
 
 	isDev := false
