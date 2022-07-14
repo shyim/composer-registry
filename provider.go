@@ -15,6 +15,8 @@ func registerProviders(config *Config) {
 		switch provider.Type {
 		case "gitlab":
 			providers[provider.Name] = NewGitlabProvider(provider)
+		case "github":
+			providers[provider.Name] = NewGithubProvider(provider)
 		}
 	}
 }
