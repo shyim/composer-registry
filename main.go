@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/julienschmidt/httprouter"
@@ -8,7 +9,10 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"net/http"
 	"os"
+	"os/signal"
+	"sort"
 	"strings"
+	"syscall"
 )
 
 var config *Config
@@ -19,6 +23,7 @@ const DB_PATH = "packages.db"
 func main() {
 	router := httprouter.New()
 	router.GET("/packages.json", packagesJsonHandler)
+	router.GET("/p/:owner/:repo/versions.json", singlePackageHandler)
 	router.POST("/webhook/:name", webhookHandler)
 
 	var err error
@@ -37,12 +42,15 @@ func main() {
 
 	go updateAll(false)
 
+	registerSignalHandlers()
+
 	bindAddress := os.Getenv("BIND_ADDRESS")
 
 	if bindAddress == "" {
 		bindAddress = "127.0.0.1:8080"
 	}
 
+	log.Infof("Listing on %s", bindAddress)
 	log.Fatal(http.ListenAndServe(bindAddress, router))
 }
 
@@ -92,29 +100,85 @@ func packagesJsonHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 		}
 	}
 
-	var packages = make(map[string]map[string]interface{})
+	var availablePackagesIndexed = make(map[string]bool)
 
-	db.View(func(tx *bolt.Tx) error {
+	err := db.View(func(tx *bolt.Tx) error {
 		return tx.Bucket([]byte("packages")).ForEach(func(k, v []byte) error {
-			var composerJson map[string]interface{}
-
-			if err := json.Unmarshal(v, &composerJson); err != nil {
-				return err
-			}
-
 			packageNameSplit := strings.Split(string(k), "|")
-
-			if _, ok := packages[packageNameSplit[0]]; !ok {
-				packages[packageNameSplit[0]] = make(map[string]interface{})
-			}
-
-			packages[packageNameSplit[0]][packageNameSplit[1]] = composerJson
+			availablePackagesIndexed[packageNameSplit[0]] = true
 
 			return nil
 		})
 	})
 
-	err := json.NewEncoder(w).Encode(map[string]interface{}{"packages": packages})
+	if err != nil {
+		log.Error(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	var availablePackages []string
+	for packageName := range availablePackagesIndexed {
+		availablePackages = append(availablePackages, packageName)
+	}
+
+	sort.Strings(availablePackages)
+
+	err = json.NewEncoder(w).Encode(map[string]interface{}{"metadata-url": "/p/%package%/versions.json", "available-packages": availablePackages})
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
+}
+
+func singlePackageHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	packageName := fmt.Sprintf("%s/%s", ps.ByName("owner"), ps.ByName("repo"))
+
+	isDev := false
+	if strings.HasSuffix(packageName, "~dev") {
+		isDev = true
+		packageName = packageName[:len(packageName)-4]
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+
+	singleResponse := make(map[string]interface{})
+	singleResponse["minified"] = "composer/2.0"
+	versions := make([]map[string]interface{}, 0)
+
+	err := db.View(func(tx *bolt.Tx) error {
+		c := tx.Bucket([]byte("packages")).Cursor()
+
+		prefix := []byte(packageName + "|")
+		for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
+			if isDev && !strings.HasPrefix(string(k), packageName+"|dev-") {
+				continue
+			}
+
+			if !isDev && strings.HasPrefix(string(k), packageName+"|dev-") {
+				continue
+			}
+
+			composerJson := map[string]interface{}{}
+
+			if err := json.Unmarshal(v, &composerJson); err != nil {
+				return err
+			}
+
+			versions = append(versions, composerJson)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	singleResponse["packages"] = map[string]interface{}{packageName: versions}
+
+	err = json.NewEncoder(w).Encode(singleResponse)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
@@ -158,4 +222,16 @@ func updateAll(force bool) {
 			}
 		}
 	}
+}
+
+func registerSignalHandlers() {
+	sigs := make(chan os.Signal)
+	signal.Notify(sigs, syscall.SIGUSR2)
+
+	go func() {
+		for range sigs {
+			log.Infof("Received signal, updating all packages")
+			updateAll(true)
+		}
+	}()
 }
