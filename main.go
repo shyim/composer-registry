@@ -9,10 +9,8 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"net/http"
 	"os"
-	"os/signal"
 	"sort"
 	"strings"
-	"syscall"
 )
 
 var config *Config
@@ -218,16 +216,4 @@ func updateAll(force bool) {
 			}
 		}
 	}
-}
-
-func registerSignalHandlers() {
-	sigs := make(chan os.Signal)
-	signal.Notify(sigs, syscall.SIGUSR2)
-
-	go func() {
-		for range sigs {
-			log.Infof("Received signal, updating all packages")
-			updateAll(true)
-		}
-	}()
 }
