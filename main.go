@@ -185,6 +185,10 @@ func addOrUpdateVersion(tx *bolt.Tx, bytes []byte, version, downloadLink string)
 		return err
 	}
 
+	return addOrUpdateVersionDirect(tx, composerJson, downloadLink, version)
+}
+
+func addOrUpdateVersionDirect(tx *bolt.Tx, composerJson map[string]interface{}, downloadLink string, version string) error {
 	packageName := composerJson["name"].(string)
 
 	composerJson["dist"] = map[string]string{

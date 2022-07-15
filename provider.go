@@ -17,6 +17,8 @@ func registerProviders(config *Config) {
 			providers[provider.Name] = NewGitlabProvider(provider)
 		case "github":
 			providers[provider.Name] = NewGithubProvider(provider)
+		case "shopware":
+			providers[provider.Name] = NewShopwareProvider(provider)
 		}
 	}
 }

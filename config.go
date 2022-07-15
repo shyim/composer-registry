@@ -12,6 +12,7 @@ type ConfigUser struct {
 type Config struct {
 	Providers []ConfigProvider `yaml:"providers"`
 	Users     []ConfigUser     `yaml:"users"`
+	URL       string
 }
 type ConfigProjects struct {
 	Name string `yaml:"name"`
