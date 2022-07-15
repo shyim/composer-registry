@@ -149,5 +149,5 @@ func (g GitlabProvider) addOrUpdate(tx *bolt.Tx, pid, version, sha string) error
 
 	bytes, _ := base64.StdEncoding.DecodeString(file.Content)
 
-	return addOrUpdate(tx, bytes, version, fmt.Sprintf("https://%s/api/v4/projects/%s/repository/archive.zip?sha=%s", g.Provider.Domain, pid, sha))
+	return addOrUpdateVersion(tx, bytes, version, fmt.Sprintf("https://%s/api/v4/projects/%s/repository/archive.zip?sha=%s", g.Provider.Domain, pid, sha))
 }

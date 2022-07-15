@@ -148,5 +148,5 @@ func (g GithubProvider) addOrUpdate(ctx context.Context, tx *bolt.Tx, owner, rep
 		return err
 	}
 
-	return addOrUpdate(tx, []byte(content), version, fmt.Sprintf("https://api.github.com/repos/%s/%s/zipball/%s", owner, repo, sha))
+	return addOrUpdateVersion(tx, []byte(content), version, fmt.Sprintf("https://api.github.com/repos/%s/%s/zipball/%s", owner, repo, sha))
 }

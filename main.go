@@ -178,7 +178,7 @@ func singlePackageHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	}
 }
 
-func addOrUpdate(tx *bolt.Tx, bytes []byte, version, downloadLink string) error {
+func addOrUpdateVersion(tx *bolt.Tx, bytes []byte, version, downloadLink string) error {
 	composerJson := map[string]interface{}{}
 
 	if err := json.Unmarshal(bytes, &composerJson); err != nil {
