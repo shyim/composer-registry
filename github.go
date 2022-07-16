@@ -63,15 +63,24 @@ func (g GithubProvider) Webhook(request *http.Request) error {
 	switch event := event.(type) {
 	case *github.PushEvent:
 		version := ""
+		trimmedVersion := ""
 
 		if strings.HasPrefix("refs/tags/", event.GetRef()) {
 			version = strings.ToLower(strings.TrimPrefix(event.GetRef(), "refs/tags/"))
+			trimmedVersion = version
 		} else {
-			version = strings.ToLower(fmt.Sprintf("dev-%s", strings.TrimPrefix(event.GetRef(), "refs/heads/")))
+			trimmedVersion = strings.ToLower(strings.TrimPrefix(event.GetRef(), "refs/heads/"))
+			version = "dev" + trimmedVersion
 		}
 
+		saveTag := g.generateSaveTag(event.GetRepo().GetOwner().GetName(), event.GetRepo().GetName(), trimmedVersion)
+
 		return db.Update(func(tx *bolt.Tx) error {
-			return g.addOrUpdate(context.Background(), tx, event.GetRepo().GetOwner().GetName(), event.GetRepo().GetName(), version, event.GetAfter())
+			if event.GetDeleted() {
+				return deleteVersion(tx, saveTag)
+			}
+
+			return g.addOrUpdate(context.Background(), tx, event.GetRepo().GetOwner().GetName(), event.GetRepo().GetName(), version, event.GetAfter(), saveTag)
 		})
 	default:
 		return fmt.Errorf("invalid webhook type")
@@ -94,7 +103,9 @@ func (g GithubProvider) updateAllTags(ctx context.Context, owner string, repo st
 			}
 
 			for _, tag := range tags {
-				if err := g.addOrUpdate(ctx, tx, owner, repo, tag.GetName(), tag.GetCommit().GetSHA()); err != nil {
+				saveTag := g.generateSaveTag(owner, repo, tag.GetName())
+
+				if err := g.addOrUpdate(ctx, tx, owner, repo, tag.GetName(), tag.GetCommit().GetSHA(), saveTag); err != nil {
 					log.Errorf("cannot update tag %s of %s/%s\n", tag.GetName(), owner, repo)
 				}
 			}
@@ -110,6 +121,10 @@ func (g GithubProvider) updateAllTags(ctx context.Context, owner string, repo st
 	})
 }
 
+func (g GithubProvider) generateSaveTag(owner string, repo string, tag string) string {
+	return fmt.Sprintf("%s/%s-%s", owner, repo, tag)
+}
+
 func (g GithubProvider) updateAllBranches(ctx context.Context, owner string, repo string) error {
 	return db.Batch(func(tx *bolt.Tx) error {
 		page := 1
@@ -121,9 +136,11 @@ func (g GithubProvider) updateAllBranches(ctx context.Context, owner string, rep
 				return err
 			}
 
-			for _, tag := range branches {
-				if err := g.addOrUpdate(ctx, tx, owner, repo, tag.GetName(), tag.GetCommit().GetSHA()); err != nil {
-					log.Errorf("cannot update branch %s of %s/%s\n", tag.GetName(), owner, repo)
+			for _, branch := range branches {
+				saveTag := g.generateSaveTag(owner, repo, branch.GetName())
+
+				if err := g.addOrUpdate(ctx, tx, owner, repo, branch.GetName(), branch.GetCommit().GetSHA(), saveTag); err != nil {
+					log.Errorf("cannot update branch %s of %s/%s\n", branch.GetName(), owner, repo)
 				}
 			}
 
@@ -138,7 +155,7 @@ func (g GithubProvider) updateAllBranches(ctx context.Context, owner string, rep
 	})
 }
 
-func (g GithubProvider) addOrUpdate(ctx context.Context, tx *bolt.Tx, owner, repo, version, sha string) error {
+func (g GithubProvider) addOrUpdate(ctx context.Context, tx *bolt.Tx, owner, repo, version, sha, saveTag string) error {
 	log.Infof("updating info of %s/%s for version %s\n", owner, repo, version)
 
 	file, _, _, err := g.client.Repositories.GetContents(ctx, owner, repo, "composer.json", &github.RepositoryContentGetOptions{Ref: sha})
@@ -153,5 +170,5 @@ func (g GithubProvider) addOrUpdate(ctx context.Context, tx *bolt.Tx, owner, rep
 		return err
 	}
 
-	return addOrUpdateVersion(tx, []byte(content), version, fmt.Sprintf("https://api.github.com/repos/%s/%s/zipball/%s", owner, repo, sha))
+	return addOrUpdateVersion(tx, []byte(content), version, fmt.Sprintf("https://api.github.com/repos/%s/%s/zipball/%s", owner, repo, sha), saveTag)
 }

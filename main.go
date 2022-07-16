@@ -95,12 +95,17 @@ func packagesJsonHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 	var availablePackagesIndexed = make(map[string]bool)
 
 	err := db.View(func(tx *bolt.Tx) error {
-		return tx.Bucket([]byte("packages")).ForEach(func(k, v []byte) error {
+		c := tx.Bucket([]byte("packages")).Cursor()
+
+		prefix := []byte("packages--")
+		for k, _ := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, _ = c.Next() {
+			k = bytes.TrimPrefix(k, prefix)
+
 			packageNameSplit := strings.Split(string(k), "|")
 			availablePackagesIndexed[packageNameSplit[0]] = true
+		}
 
-			return nil
-		})
+		return nil
 	})
 
 	if err != nil {
@@ -148,8 +153,9 @@ func singlePackageHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	err := db.View(func(tx *bolt.Tx) error {
 		c := tx.Bucket([]byte("packages")).Cursor()
 
-		prefix := []byte(packageName + "|")
+		prefix := []byte("packages--" + packageName + "|")
 		for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
+			k = bytes.TrimPrefix(k, []byte("packages--"))
 			if isDev && !strings.HasPrefix(string(k), packageName+"|dev-") {
 				continue
 			}
@@ -180,49 +186,5 @@ func singlePackageHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	err = json.NewEncoder(w).Encode(singleResponse)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
-}
-
-func addOrUpdateVersion(tx *bolt.Tx, bytes []byte, version, downloadLink string) error {
-	composerJson := map[string]interface{}{}
-
-	if err := json.Unmarshal(bytes, &composerJson); err != nil {
-		return err
-	}
-
-	return addOrUpdateVersionDirect(tx, composerJson, downloadLink, version)
-}
-
-func addOrUpdateVersionDirect(tx *bolt.Tx, composerJson map[string]interface{}, downloadLink string, version string) error {
-	packageName := composerJson["name"].(string)
-
-	composerJson["dist"] = map[string]string{
-		"url":  downloadLink,
-		"type": "zip",
-	}
-
-	composerJson["version"] = version
-
-	key := fmt.Sprintf("%s|%s", packageName, version)
-
-	bucket, err := tx.CreateBucketIfNotExists([]byte("packages"))
-
-	if err != nil {
-		return err
-	}
-
-	composerJsonData, _ := json.Marshal(composerJson)
-
-	return bucket.Put([]byte(key), composerJsonData)
-}
-
-func updateAll(force bool) {
-	for name, provider := range providers {
-		if provider.GetConfig().FetchAllOnStart || force {
-			log.Infof("Updating all packages of %s", name)
-			if err := provider.UpdateAll(); err != nil {
-				log.Infof("Error updating all packages of %s: %s", name, err)
-			}
-		}
 	}
 }

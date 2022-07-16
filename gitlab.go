@@ -57,16 +57,28 @@ func (g GitlabProvider) Webhook(request *http.Request) error {
 	}
 
 	version := ""
+	trimmedVersion := ""
 
 	if strings.HasPrefix("refs/tags/", event.Ref) {
 		version = strings.ToLower(strings.TrimPrefix(event.Ref, "refs/tags/"))
+		trimmedVersion = version
 	} else {
-		version = strings.ToLower(fmt.Sprintf("dev-%s", strings.TrimPrefix(event.Ref, "refs/heads/")))
+		trimmedVersion = strings.ToLower(strings.TrimPrefix(event.Ref, "refs/heads/"))
+		version = "dev" + trimmedVersion
 	}
 
+	saveTag := g.generateSaveTag(event.ProjectID, trimmedVersion)
+
 	return db.Update(func(tx *bolt.Tx) error {
-		return g.addOrUpdate(tx, strconv.FormatInt(int64(event.ProjectID), 10), version, event.CheckoutSHA)
+		if event.After == "0000000000000000000000000000000000000000" {
+			return deleteVersion(tx, saveTag)
+		}
+		return g.addOrUpdate(tx, strconv.FormatInt(int64(event.ProjectID), 10), version, event.CheckoutSHA, saveTag)
 	})
+}
+
+func (g GitlabProvider) generateSaveTag(projectID int, trimmedVersion string) string {
+	return fmt.Sprintf("%d-%s", projectID, trimmedVersion)
 }
 
 func (GitlabProvider) RegisterCustomHTTPHandlers(router *httprouter.Router) {
@@ -94,7 +106,10 @@ func (g GitlabProvider) updateAllBranches(gitlabId string) error {
 
 			for _, branch := range branches {
 				log.Printf("Fetching infos for repo %s and branch: %s\n", gitlabId, branch.Name)
-				if err := g.addOrUpdate(tx, strconv.FormatInt(int64(project.ID), 10), strings.ToLower(fmt.Sprintf("dev-%s", branch.Name)), branch.Commit.ShortID); err != nil {
+
+				saveTag := g.generateSaveTag(project.ID, branch.Name)
+
+				if err := g.addOrUpdate(tx, strconv.FormatInt(int64(project.ID), 10), strings.ToLower(fmt.Sprintf("dev-%s", branch.Name)), branch.Commit.ShortID, saveTag); err != nil {
 					return err
 				}
 			}
@@ -130,7 +145,8 @@ func (g GitlabProvider) updateAllTags(gitlabId string) error {
 
 			for _, tag := range tags {
 				log.Printf("Fetching infos for repo %s and tag: %s\n", gitlabId, tag.Name)
-				if err := g.addOrUpdate(tx, strconv.FormatInt(int64(project.ID), 10), strings.ToLower(tag.Name), tag.Commit.ShortID); err != nil {
+				saveTag := g.generateSaveTag(project.ID, tag.Name)
+				if err := g.addOrUpdate(tx, strconv.FormatInt(int64(project.ID), 10), strings.ToLower(tag.Name), tag.Commit.ShortID, saveTag); err != nil {
 					return err
 				}
 			}
@@ -145,7 +161,7 @@ func (g GitlabProvider) updateAllTags(gitlabId string) error {
 	})
 }
 
-func (g GitlabProvider) addOrUpdate(tx *bolt.Tx, pid, version, sha string) error {
+func (g GitlabProvider) addOrUpdate(tx *bolt.Tx, pid, version, sha, saveTag string) error {
 	file, _, err := g.git.RepositoryFiles.GetFile(pid, "composer.json", &gitlab.GetFileOptions{Ref: &sha})
 
 	if err != nil {
@@ -154,5 +170,5 @@ func (g GitlabProvider) addOrUpdate(tx *bolt.Tx, pid, version, sha string) error
 
 	bytes, _ := base64.StdEncoding.DecodeString(file.Content)
 
-	return addOrUpdateVersion(tx, bytes, version, fmt.Sprintf("https://%s/api/v4/projects/%s/repository/archive.zip?sha=%s", g.Provider.Domain, pid, sha))
+	return addOrUpdateVersion(tx, bytes, version, fmt.Sprintf("https://%s/api/v4/projects/%s/repository/archive.zip?sha=%s", g.Provider.Domain, pid, sha), saveTag)
 }

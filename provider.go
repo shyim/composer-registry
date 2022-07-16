@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/julienschmidt/httprouter"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -31,6 +32,17 @@ func registerProviders(config *Config, router *httprouter.Router) {
 			providers[provider.Name].RegisterCustomHTTPHandlers(router)
 
 			registeredProviders[provider.Type] = true
+		}
+	}
+}
+
+func updateAll(force bool) {
+	for name, provider := range providers {
+		if provider.GetConfig().FetchAllOnStart || force {
+			log.Infof("Updating all packages of %s", name)
+			if err := provider.UpdateAll(); err != nil {
+				log.Infof("Error updating all packages of %s: %s", name, err)
+			}
 		}
 	}
 }

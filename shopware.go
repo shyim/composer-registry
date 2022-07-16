@@ -81,7 +81,7 @@ func (s ShopwareProvider) updatePackages(tx *bolt.Tx, ctx context.Context, token
 
 			link := fmt.Sprintf("%s/shopware/%s/%s/file.zip", config.URL, name, version)
 
-			if err := addOrUpdateVersionDirect(tx, info, link, version); err != nil {
+			if err := addOrUpdateVersionDirect(tx, info, link, version, name+version); err != nil {
 				log.Errorf("cannot update version %s:%s\n", name, version)
 			}
 
