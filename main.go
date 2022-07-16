@@ -22,6 +22,7 @@ func main() {
 	router.GET("/packages.json", packagesJsonHandler)
 	router.GET("/p/:owner/:repo/versions.json", singlePackageHandler)
 	router.POST("/webhook/:name", webhookHandler)
+	router.GET("/custom/:owner/:repo/:version/file.zip", handleCustomDownload)
 
 	var err error
 	config, err = LoadConfig()
@@ -187,4 +188,19 @@ func singlePackageHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
+}
+
+func handleCustomDownload(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user := validateRequest(r)
+
+	if user == nil {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	packageName := fmt.Sprintf("%s/%s", ps.ByName("owner"), ps.ByName("repo"))
+
+	zipFile := getZipPath(packageName, ps.ByName("version"))
+
+	http.ServeFile(w, r, zipFile)
 }

@@ -26,6 +26,8 @@ func registerProviders(config *Config, router *httprouter.Router) {
 			providers[provider.Name] = NewGithubProvider(provider)
 		case "shopware":
 			providers[provider.Name] = NewShopwareProvider(provider)
+		case "custom":
+			providers[provider.Name] = NewCustomProvider(provider)
 		}
 
 		if _, ok := registeredProviders[provider.Type]; !ok {

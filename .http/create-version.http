@@ -1,0 +1,7 @@
+POST http://localhost:8080/custom/package/create
+
+< C:\Users\shyim\Downloads\FroshTools.zip
+
+###
+
+DELETE http://localhost:8080/custom/package/frosh/tools/0.2.1

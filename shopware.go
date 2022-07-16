@@ -42,7 +42,6 @@ func (ShopwareProvider) Webhook(request *http.Request) error {
 }
 
 func (s ShopwareProvider) RegisterCustomHTTPHandlers(router *httprouter.Router) {
-	router.GET("/provider/shopware/:owner/:repo/:version/file.zip", s.handleDownload)
 }
 
 func (s ShopwareProvider) updatePackages(tx *bolt.Tx, ctx context.Context, token string) error {
@@ -79,7 +78,7 @@ func (s ShopwareProvider) updatePackages(tx *bolt.Tx, ctx context.Context, token
 				log.Errorf("cannot download remote package (%s in version %s): %s", name, version, err)
 			}
 
-			link := fmt.Sprintf("%s/provider/shopware/%s/%s/file.zip", config.URL, name, version)
+			link := fmt.Sprintf("%s/custom/%s/%s/file.zip", config.URL, name, version)
 
 			if err := addOrUpdateVersionDirect(tx, info, link, version, name+version); err != nil {
 				log.Errorf("cannot update version %s:%s\n", name, version)
@@ -124,21 +123,6 @@ func (s ShopwareProvider) storeZip(ctx context.Context, name string, version str
 	}
 
 	return ioutil.WriteFile(zipPath, body, os.ModePerm)
-}
-
-func (s ShopwareProvider) handleDownload(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user := validateRequest(r)
-
-	if user == nil {
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-		return
-	}
-
-	packageName := fmt.Sprintf("%s/%s", ps.ByName("owner"), ps.ByName("repo"))
-
-	zipFile := getZipPath(packageName, ps.ByName("version"))
-
-	http.ServeFile(w, r, zipFile)
 }
 
 type ComposerResponse struct {

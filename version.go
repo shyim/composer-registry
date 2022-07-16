@@ -17,6 +17,8 @@ func addOrUpdateVersion(tx *bolt.Tx, bytes []byte, version, downloadLink, infoKe
 }
 
 func deleteVersion(tx *bolt.Tx, saveTag string) error {
+	saveTag = "info--" + saveTag
+
 	bucket := tx.Bucket([]byte("packages"))
 
 	versionKey := bucket.Get([]byte(saveTag))
