@@ -182,7 +182,7 @@ func singlePackageHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 		return
 	}
 
-	singleResponse["packages"] = map[string]interface{}{packageName: versions}
+	singleResponse["packages"] = map[string]interface{}{packageName: optimizeComposerVersions(versions)}
 
 	err = json.NewEncoder(w).Encode(singleResponse)
 	if err != nil {
