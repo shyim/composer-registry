@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 )
 
 type ShopwareProvider struct {
@@ -23,17 +26,23 @@ func (s ShopwareProvider) GetConfig() ConfigProvider {
 }
 
 func (s ShopwareProvider) UpdateAll() error {
-	//for _, project := range s.provider.Projects {
-	//	if err := s.updatePackages(context.Background(), project.Name); err != nil {
-	//		log.Errorf("cannot update all packages %s", err)
-	//	}
-	//}
+	return db.Batch(func(tx *bolt.Tx) error {
+		for _, project := range s.provider.Projects {
+			if err := s.updatePackages(tx, context.Background(), project.Name); err != nil {
+				log.Errorf("cannot update all packages %s", err)
+			}
+		}
 
-	return nil
+		return nil
+	})
 }
 
 func (ShopwareProvider) Webhook(request *http.Request) error {
 	return nil
+}
+
+func (s ShopwareProvider) RegisterCustomHTTPHandlers(router *httprouter.Router) {
+	router.GET("/shopware/:owner/:repo/:version/file.zip", s.handleDownload)
 }
 
 func (s ShopwareProvider) updatePackages(tx *bolt.Tx, ctx context.Context, token string) error {
@@ -64,14 +73,72 @@ func (s ShopwareProvider) updatePackages(tx *bolt.Tx, ctx context.Context, token
 
 	for name, pkg := range response.Packages {
 		for version, info := range pkg {
-			link := fmt.Sprintf("%s/shopware/%s/%s.zip", config.URL, name, version)
+			dist := info["dist"].(map[string]interface{})
+
+			if err := s.storeZip(ctx, name, version, dist["url"].(string), token); err != nil {
+				log.Errorf("cannot download remote package (%s in version %s): %s", name, version, err)
+			}
+
+			link := fmt.Sprintf("%s/shopware/%s/%s/file.zip", config.URL, name, version)
+
 			if err := addOrUpdateVersionDirect(tx, info, link, version); err != nil {
 				log.Errorf("cannot update version %s:%s\n", name, version)
 			}
+
+			log.Infof("updated package %s in version %s", name, version)
 		}
 	}
 
 	return nil
+}
+
+func (s ShopwareProvider) storeZip(ctx context.Context, name string, version string, url, token string) error {
+	zipPath := getZipPath(name, version)
+	zipFolder := filepath.Dir(zipPath)
+
+	if _, err := os.Stat(zipPath); err == nil {
+		return nil
+	}
+
+	r, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	r.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(r)
+
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return err
+	}
+
+	if _, err := os.Stat(zipFolder); os.IsNotExist(err) {
+		if err := os.MkdirAll(zipFolder, os.ModePerm); err != nil {
+			return err
+		}
+	}
+
+	return ioutil.WriteFile(zipPath, body, os.ModePerm)
+}
+
+func (s ShopwareProvider) handleDownload(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user := validateRequest(r)
+
+	if user == nil {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	packageName := fmt.Sprintf("%s/%s", ps.ByName("owner"), ps.ByName("repo"))
+
+	zipFile := getZipPath(packageName, ps.ByName("version"))
+
+	http.ServeFile(w, r, zipFile)
 }
 
 type ComposerResponse struct {

@@ -9,14 +9,13 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"net/http"
 	"os"
+	"path"
 	"sort"
 	"strings"
 )
 
 var config *Config
 var db *bolt.DB
-
-const DB_PATH = "packages.db"
 
 func main() {
 	router := httprouter.New()
@@ -30,13 +29,19 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	db, err = bolt.Open(DB_PATH, 0666, nil)
+	db, err = bolt.Open(path.Join(config.StoragePath, "packages.db"), 0666, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte("packages"))
+		return err
+	})
+
 	defer db.Close()
 
-	registerProviders(config)
+	registerProviders(config, router)
 
 	go updateAll(false)
 

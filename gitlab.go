@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 	bolt "go.etcd.io/bbolt"
@@ -66,6 +67,10 @@ func (g GitlabProvider) Webhook(request *http.Request) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		return g.addOrUpdate(tx, strconv.FormatInt(int64(event.ProjectID), 10), version, event.CheckoutSHA)
 	})
+}
+
+func (GitlabProvider) RegisterCustomHTTPHandlers(router *httprouter.Router) {
+
 }
 
 func (g GitlabProvider) updateAllBranches(gitlabId string) error {

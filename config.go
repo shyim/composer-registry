@@ -1,8 +1,11 @@
 package main
 
 import (
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"os"
+	"path"
 )
 
 type ConfigUser struct {
@@ -10,9 +13,10 @@ type ConfigUser struct {
 }
 
 type Config struct {
-	Providers []ConfigProvider `yaml:"providers"`
-	Users     []ConfigUser     `yaml:"users"`
-	URL       string
+	Providers   []ConfigProvider `yaml:"providers"`
+	Users       []ConfigUser     `yaml:"users"`
+	URL         string           `yaml:"base_url"`
+	StoragePath string           `yaml:"storage_path"`
 }
 type ConfigProjects struct {
 	Name string `yaml:"name"`
@@ -42,5 +46,32 @@ func LoadConfig() (*Config, error) {
 		return nil, err
 	}
 
+	if config.StoragePath == "" {
+		cwd, err := os.Getwd()
+
+		if err != nil {
+			config.StoragePath = "storage"
+		} else {
+			config.StoragePath = path.Join(cwd, "storage")
+		}
+	}
+
+	if _, err := os.Stat(config.StoragePath); os.IsNotExist(err) {
+		if err := os.MkdirAll(config.StoragePath, os.ModePerm); err != nil {
+			return nil, err
+		}
+	}
+
+	log.Infof("config: using %s as storage", config.StoragePath)
+
+	if config.URL == "" {
+		config.URL = "http://localhost:8080"
+		log.Infof("config: base_url is not set in config. defaulting to http://localhost:8080")
+	}
+
 	return &config, nil
+}
+
+func getZipPath(name string, version string) string {
+	return path.Join(config.StoragePath, "packages", name, version+".zip")
 }

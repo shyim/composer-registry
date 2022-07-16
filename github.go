@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/go-github/v45/github"
+	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 	"golang.org/x/oauth2"
@@ -75,6 +76,10 @@ func (g GithubProvider) Webhook(request *http.Request) error {
 	default:
 		return fmt.Errorf("invalid webhook type")
 	}
+}
+
+func (GithubProvider) RegisterCustomHTTPHandlers(router *httprouter.Router) {
+
 }
 
 func (g GithubProvider) updateAllTags(ctx context.Context, owner string, repo string) error {
