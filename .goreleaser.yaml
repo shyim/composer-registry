@@ -1,0 +1,64 @@
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    binary: composer-registry
+    flags:
+      - -trimpath
+    goos:
+      - linux
+      - windows
+      - darwin
+
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+    format_overrides:
+      - goos: windows
+        format: zip
+
+release:
+  github:
+    owner: shyim
+    name: composer-registry
+
+dockers:
+  - image_templates:
+      - "ghcr.io/shyim/composer-registry:{{ .Tag }}"
+      - "ghcr.io/shyim/composer-registry:v{{ .Major }}"
+      - "ghcr.io/shyim/composer-registry:v{{ .Major }}.{{ .Minor }}"
+      - "ghcr.io/shyim/composer-registry:latest"
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+nfpms:
+  -
+    package_name: composer-registry
+    vendor: Shyim
+    homepage: https://github.com/shyim/composer-registry
+    maintainer: Shyim <github@shyim.de>
+    description: Composer registry
+    license: MIT
+    formats:
+      - apk
+      - deb
+      - rpm
