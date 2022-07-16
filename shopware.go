@@ -42,7 +42,7 @@ func (ShopwareProvider) Webhook(request *http.Request) error {
 }
 
 func (s ShopwareProvider) RegisterCustomHTTPHandlers(router *httprouter.Router) {
-	router.GET("/shopware/:owner/:repo/:version/file.zip", s.handleDownload)
+	router.GET("/provider/shopware/:owner/:repo/:version/file.zip", s.handleDownload)
 }
 
 func (s ShopwareProvider) updatePackages(tx *bolt.Tx, ctx context.Context, token string) error {
@@ -79,7 +79,7 @@ func (s ShopwareProvider) updatePackages(tx *bolt.Tx, ctx context.Context, token
 				log.Errorf("cannot download remote package (%s in version %s): %s", name, version, err)
 			}
 
-			link := fmt.Sprintf("%s/shopware/%s/%s/file.zip", config.URL, name, version)
+			link := fmt.Sprintf("%s/provider/shopware/%s/%s/file.zip", config.URL, name, version)
 
 			if err := addOrUpdateVersionDirect(tx, info, link, version, name+version); err != nil {
 				log.Errorf("cannot update version %s:%s\n", name, version)
