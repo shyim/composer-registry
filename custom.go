@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type CustomProvider struct {
@@ -40,6 +41,11 @@ func (c CustomProvider) RegisterCustomHTTPHandlers(router *httprouter.Router) {
 }
 
 func (c CustomProvider) CreateVersion(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	if !c.auth(r) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -139,6 +145,11 @@ func (c CustomProvider) CreateVersion(w http.ResponseWriter, r *http.Request, ps
 }
 
 func (c CustomProvider) DeleteVersion(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	if !c.auth(r) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	owner := ps.ByName("owner")
 	repo := ps.ByName("repo")
 	version := ps.ByName("version")
@@ -165,4 +176,14 @@ func (c CustomProvider) DeleteVersion(w http.ResponseWriter, r *http.Request, ps
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (c CustomProvider) auth(r *http.Request) bool {
+	if c.provider.WebhookSecret == "" {
+		return true
+	}
+
+	authHeader := strings.ToLower(r.Header.Get("authorization"))
+
+	return strings.TrimPrefix(authHeader, "bearer ") == c.provider.WebhookSecret
 }
