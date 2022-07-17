@@ -14,6 +14,18 @@ This Composer registry fetches multiple sources and serves them as Composer pack
 - Download the latest version from the released files
 - Create a `config.json` or a `config.yml` like your preferences.
 
+### Docker
+
+```shell
+docker run \ 
+  -p8080:8080 \
+  -v $(pwd)/config.json:/config.json \
+  -v $(pwd)/storage:/storage \
+  ghcr.io/shyim/composer-registry:latest
+```
+
+`/storage` will be used to save the database and zips if mirroring is enabled
+
 ## Configuration
 
 The base config file looks like this:
