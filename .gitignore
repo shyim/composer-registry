@@ -3,5 +3,6 @@
 /*.iml
 
 /config.yml
+/config.json
 /gitlab-packagist
 /storage

@@ -5,9 +5,13 @@
             "type": "object",
             "additionalProperties": false,
             "required": [
-                "base_url"
+                "base_url",
+                "providers"
             ],
             "properties": {
+                "$schema": {
+                    "type": "string"
+                },
                 "base_url": {
                     "type": "string"
                 },
