@@ -18,7 +18,7 @@ This Composer registry fetches multiple sources and serves them as Composer pack
 
 ```shell
 docker run \ 
-  -p8080:8080 \
+  -p 8080:8080 \
   -v $(pwd)/config.json:/config.json \
   -v $(pwd)/storage:/storage \
   ghcr.io/shyim/composer-registry:latest
