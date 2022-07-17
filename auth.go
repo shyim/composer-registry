@@ -7,10 +7,10 @@ import (
 
 func validateRequest(r *http.Request) *ConfigUser {
 	if len(config.Users) == 0 {
-		return &ConfigUser{}
+		return &ConfigUser{Rules: make([]ConfigUserRule, 0)}
 	}
 
-	token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
+	token := strings.TrimPrefix(strings.ToLower(r.Header.Get("authorization")), "bearer ")
 
 	var found *ConfigUser
 	for _, user := range config.Users {

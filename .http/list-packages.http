@@ -1,0 +1,12 @@
+GET localhost:8080/packages.json
+Authorization: Bearer test
+
+###
+
+GET localhost:8080/p/frosh/tools/versions.json
+Authorization: Bearer test
+
+###
+
+GET localhost:8080/p/shopware/platform/versions.json
+Authorization: Bearer test

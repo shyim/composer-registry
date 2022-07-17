@@ -198,5 +198,27 @@ The token can be configured like so
 > composer config bearer.<instance-domain> <your-token>
 ```
 
-The users will have always access to all packages currently.
+## Rules
+
+You can add to the tokens rules, when they match then the token will be able to download that package.
+
+Possible types are: `begins_with`, `ends_with`, `contains`, `equals`
+
+```json
+{
+    "$schema": "https://raw.githubusercontent.com/shyim/composer-registry/main/config-schema.json",
+    "base_url": "http://localhost:8080",
+    "users": [
+        {
+            "token": "test",
+            "rules": [
+                {
+                    "type": "begins_with",
+                    "value": "store.shopware.com"
+                }
+            ]
+        }
+    ]
+}
+```
 

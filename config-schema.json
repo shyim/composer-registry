@@ -93,6 +93,29 @@
             "properties": {
                 "token": {
                     "type": "string"
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/user_rule"
+                    }
+                }
+            }
+        },
+        "user_rule": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+                "type",
+                "value"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": ["begins_with", "ends_with", "contains", "equals"]
+                },
+                "value": {
+                    "type": "string"
                 }
             }
         }

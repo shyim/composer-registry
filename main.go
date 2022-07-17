@@ -103,7 +103,10 @@ func packagesJsonHandler(w http.ResponseWriter, r *http.Request, ps httprouter.P
 			k = bytes.TrimPrefix(k, prefix)
 
 			packageNameSplit := strings.Split(string(k), "|")
-			availablePackagesIndexed[packageNameSplit[0]] = true
+
+			if user.HasAccessToPackage(packageNameSplit[0]) {
+				availablePackagesIndexed[packageNameSplit[0]] = true
+			}
 		}
 
 		return nil
@@ -137,6 +140,11 @@ func singlePackageHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 	}
 
 	packageName := fmt.Sprintf("%s/%s", ps.ByName("owner"), ps.ByName("repo"))
+
+	if !user.HasAccessToPackage(packageName) {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
 
 	isDev := false
 	if strings.HasSuffix(packageName, "~dev") {
@@ -199,6 +207,11 @@ func handleCustomDownload(w http.ResponseWriter, r *http.Request, ps httprouter.
 	}
 
 	packageName := fmt.Sprintf("%s/%s", ps.ByName("owner"), ps.ByName("repo"))
+
+	if !user.HasAccessToPackage(packageName) {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
 
 	zipFile := getZipPath(packageName, ps.ByName("version"))
 

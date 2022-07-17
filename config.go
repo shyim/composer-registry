@@ -8,10 +8,17 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 )
 
 type ConfigUser struct {
-	Token string `yaml:"token" json:"token"`
+	Token string           `yaml:"token" json:"token"`
+	Rules []ConfigUserRule `yaml:"rules" json:"rules"`
+}
+
+type ConfigUserRule struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
 }
 
 type Config struct {
@@ -93,4 +100,33 @@ func LoadConfig() (*Config, error) {
 
 func getZipPath(name string, version string) string {
 	return path.Join(config.StoragePath, "packages", name, version+".zip")
+}
+
+func (c ConfigUser) HasAccessToPackage(packageName string) bool {
+	if len(c.Rules) == 0 {
+		return true
+	}
+
+	for _, rule := range c.Rules {
+		switch rule.Type {
+		case "begins_with":
+			if strings.HasPrefix(packageName, rule.Value) {
+				return true
+			}
+		case "ends_with":
+			if strings.HasSuffix(packageName, rule.Value) {
+				return true
+			}
+		case "contains":
+			if strings.Contains(packageName, rule.Value) {
+				return true
+			}
+		case "equals":
+			if packageName == rule.Value {
+				return true
+			}
+		}
+	}
+
+	return false
 }
