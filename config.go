@@ -29,6 +29,7 @@ type ConfigProvider struct {
 	WebhookSecret   string           `yaml:"webhook_secret"`
 	Projects        []ConfigProjects `yaml:"projects"`
 	FetchAllOnStart bool             `yaml:"fetch_all_on_start"`
+	CronSchedule    string           `yaml:"cron_schedule"`
 }
 
 func LoadConfig() (*Config, error) {

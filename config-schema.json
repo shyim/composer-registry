@@ -1,0 +1,96 @@
+{
+    "$ref": "#/definitions/root",
+    "definitions": {
+        "root": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "base_url"
+            ],
+            "properties": {
+                "base_url": {
+                    "type": "string"
+                },
+                "storage_path": {
+                    "type": "string"
+                },
+                "providers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/provider"
+                    }
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/user"
+                    }
+                }
+            }
+        },
+        "provider": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "name",
+                "type"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "github",
+                        "gitlab",
+                        "shopware",
+                        "custom"
+                    ]
+                },
+                "domain": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "webhook_secret": {
+                    "type": "string"
+                },
+                "fetch_all_on_start": {
+                    "type": "boolean"
+                },
+                "cron_schedule": {
+                    "type": "string"
+                },
+                "projects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/project"
+                    }
+                }
+            }
+        },
+        "project": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "user": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
