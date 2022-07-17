@@ -141,15 +141,15 @@ func singlePackageHandler(w http.ResponseWriter, r *http.Request, ps httprouter.
 
 	packageName := fmt.Sprintf("%s/%s", ps.ByName("owner"), ps.ByName("repo"))
 
-	if !user.HasAccessToPackage(packageName) {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
-
 	isDev := false
 	if strings.HasSuffix(packageName, "~dev") {
 		isDev = true
 		packageName = packageName[:len(packageName)-4]
+	}
+
+	if !user.HasAccessToPackage(packageName) {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
