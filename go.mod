@@ -3,7 +3,7 @@ module github.com/shyim/composer-registry
 go 1.18
 
 require (
-	github.com/go-co-op/gocron v1.15.1
+	github.com/go-co-op/gocron v1.16.1
 	github.com/google/go-github/v45 v45.2.0
 	github.com/jinzhu/copier v0.3.5
 	github.com/julienschmidt/httprouter v1.3.0
