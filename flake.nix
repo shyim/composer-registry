@@ -37,7 +37,7 @@
 
             nativeBuildInputs = [ pkgs.installShellFiles ];
 
-            vendorSha256 = "sha256-VoJZY0IcdlMJ3g64DZatCbP68GvWH8sFvL5o7diYLQM=";
+            vendorSha256 = "sha256-qa6CiY/d4pSFwIBkWL984BNPP6xPWCkgibHYAYecNuU=";
 
             postInstall = ''
               export HOME="$(mktemp -d)"
