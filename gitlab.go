@@ -4,13 +4,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 	bolt "go.etcd.io/bbolt"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 type GitlabProvider struct {

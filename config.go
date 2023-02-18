@@ -3,12 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
+
+	"github.com/caarlos0/env/v7"
+	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 )
 
 type ConfigUser struct {
@@ -24,8 +26,9 @@ type ConfigUserRule struct {
 type Config struct {
 	Providers   []ConfigProvider `yaml:"providers" json:"providers"`
 	Users       []ConfigUser     `yaml:"users" json:"users"`
-	URL         string           `yaml:"base_url" json:"base_url"`
-	StoragePath string           `yaml:"storage_path" json:"storage_path"`
+	URL         string           `yaml:"base_url" json:"base_url" env:"COMPOSER_REGISTRY_URL"`
+	StoragePath string           `yaml:"storage_path" json:"storage_path" env:"COMPOSER_REGISTRY_STORAGE_PATH"`
+	BindAddress string           `yaml:"bind_address" json:"bind_address" env:"COMPOSER_REGISTRY_BIND_ADDRESS"`
 }
 type ConfigProjects struct {
 	Name string `yaml:"name"`
@@ -44,32 +47,36 @@ type ConfigProvider struct {
 func LoadConfig() (*Config, error) {
 	var config Config
 
-	if _, err := os.Stat("config.yml"); err == nil {
-		bytes, err := ioutil.ReadFile("config.yml")
+	if _, err := os.Stat(configFile); err != nil {
+		return nil, fmt.Errorf("cannot find config file at %s", configFile)
+	}
 
-		if err != nil {
-			return nil, err
-		}
+	bytes, err := os.ReadFile(configFile)
 
+	if err != nil {
+		return nil, err
+	}
+
+	configExtension := filepath.Ext(configFile)
+	if configExtension == ".yml" || configExtension == ".yaml" {
 		err = yaml.Unmarshal(bytes, &config)
 
 		if err != nil {
 			return nil, err
 		}
-	} else if _, err := os.Stat("config.json"); err == nil {
-		bytes, err := ioutil.ReadFile("config.json")
-
-		if err != nil {
-			return nil, err
-		}
-
+	} else if configExtension == ".json" {
 		err = json.Unmarshal(bytes, &config)
 
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		return nil, fmt.Errorf("cannot find config.json or a config.yml")
+		return nil, fmt.Errorf("config file is not a json or yaml file")
+	}
+
+	err = env.Parse(config)
+	if err != nil {
+		return nil, err
 	}
 
 	if config.StoragePath == "" {
@@ -80,6 +87,10 @@ func LoadConfig() (*Config, error) {
 		} else {
 			config.StoragePath = path.Join(cwd, "storage")
 		}
+	}
+
+	if config.BindAddress == "" {
+		config.BindAddress = "127.0.0.1:8080"
 	}
 
 	if _, err := os.Stat(config.StoragePath); os.IsNotExist(err) {

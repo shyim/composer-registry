@@ -4,10 +4,11 @@
 package main
 
 import (
-	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"syscall"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func registerSignalHandlers() {

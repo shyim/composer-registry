@@ -3,21 +3,32 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
-	"github.com/julienschmidt/httprouter"
-	log "github.com/sirupsen/logrus"
-	bolt "go.etcd.io/bbolt"
 	"net/http"
 	"os"
 	"path"
 	"sort"
 	"strings"
+
+	"github.com/julienschmidt/httprouter"
+	log "github.com/sirupsen/logrus"
+	bolt "go.etcd.io/bbolt"
 )
 
 var config *Config
 var db *bolt.DB
 
+var configFile = "config.json"
+
 func main() {
+	flag.StringVar(&configFile, "config", configFile, "config file path")
+	flag.Parse()
+
+	if os.Getenv("COMPOSER_REGISTRY_CONFIG_PATH") != "" {
+		configFile = os.Getenv("COMPOSER_REGISTRY_CONFIG_PATH")
+	}
+
 	router := httprouter.New()
 	router.GET("/packages.json", packagesJsonHandler)
 	router.GET("/p/:owner/:repo/versions.json", singlePackageHandler)
@@ -40,6 +51,10 @@ func main() {
 		return err
 	})
 
+	if err != nil {
+		panic(err)
+	}
+
 	defer db.Close()
 
 	registerProviders(config, router)
@@ -48,14 +63,8 @@ func main() {
 
 	registerSignalHandlers()
 
-	bindAddress := os.Getenv("BIND_ADDRESS")
-
-	if bindAddress == "" {
-		bindAddress = "127.0.0.1:8080"
-	}
-
-	log.Infof("Listing on %s", bindAddress)
-	log.Fatal(http.ListenAndServe(bindAddress, router))
+	log.Infof("Listing on %s", config.BindAddress)
+	log.Fatal(http.ListenAndServe(config.BindAddress, router))
 }
 
 func webhookHandler(writer http.ResponseWriter, request *http.Request, ps httprouter.Params) {

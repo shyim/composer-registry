@@ -1,11 +1,12 @@
 package main
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/go-co-op/gocron"
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"time"
 )
 
 type TypeProvider interface {

@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/google/go-github/v45/github"
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 	"golang.org/x/oauth2"
-	"net/http"
-	"strings"
 )
 
 type GithubProvider struct {

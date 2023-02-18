@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/julienschmidt/httprouter"
-	log "github.com/sirupsen/logrus"
-	bolt "go.etcd.io/bbolt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/julienschmidt/httprouter"
+	log "github.com/sirupsen/logrus"
+	bolt "go.etcd.io/bbolt"
 )
 
 type ShopwareProvider struct {
