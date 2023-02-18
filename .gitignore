@@ -1,6 +1,7 @@
 # Jetbrains IDE
 /.idea
 /*.iml
+/result
 
 /config.yml
 /config.json
