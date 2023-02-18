@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - "go.sum"
+    paths-ignore:
+      - "flake.nix"
 
 permissions:
   contents: write
