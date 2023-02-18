@@ -6,6 +6,7 @@ require (
 	github.com/caarlos0/env/v7 v7.0.0
 	github.com/go-co-op/gocron v1.18.0
 	github.com/google/go-github/v45 v45.2.0
+	github.com/google/go-github/v50 v50.0.0
 	github.com/jinzhu/copier v0.3.5
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/sirupsen/logrus v1.9.0
@@ -13,6 +14,7 @@ require (
 	go.etcd.io/bbolt v1.3.7
 	golang.org/x/oauth2 v0.5.0
 	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require github.com/google/go-cmp v0.5.9 // indirect
