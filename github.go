@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/go-github/v45/github"
+	"github.com/google/go-github/v50/github"
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
