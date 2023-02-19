@@ -74,7 +74,7 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("config file is not a json or yaml file")
 	}
 
-	err = env.Parse(config)
+	err = env.Parse(&config)
 	if err != nil {
 		return nil, err
 	}

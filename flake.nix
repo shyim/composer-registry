@@ -34,19 +34,7 @@
             pname = "composer-registry";
             inherit version;
             src = ./.;
-
-            nativeBuildInputs = [ pkgs.installShellFiles ];
-
             vendorSha256 = "sha256-jctlMpXVRBwDgfDPVeibV9hOywMboTxGNd4mxdffzWY=";
-
-            postInstall = ''
-              export HOME="$(mktemp -d)"
-              installShellCompletion --cmd composer-registry \
-                --bash <($out/bin/composer-registry completion bash) \
-                --zsh <($out/bin/composer-registry completion zsh) \
-                --fish <($out/bin/composer-registry completion fish)
-            '';
-
           };
           default = composer-registry;
         });

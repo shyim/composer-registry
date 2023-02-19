@@ -18,6 +18,9 @@
                 "storage_path": {
                     "type": "string"
                 },
+                "bind_address": {
+                    "type": "string"
+                },
                 "providers": {
                     "type": "array",
                     "items": {
