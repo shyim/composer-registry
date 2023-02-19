@@ -63,7 +63,7 @@
       );
 
       nixosModules = {
-        composer-registry = import ./nixos/module.nix;
+        composer-registry = import ./nixos/module.nix { packages = self.packages; };
       };
     };
 }

@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, packages, ... }:
 
 with lib;
 
@@ -15,7 +15,7 @@ in
 
     package = mkOption {
       type = types.package;
-      default = pkgs.composer-registry;
+      default = packages.${pkgs.system}.composer-registry;
       defaultText = "pkgs.composer-registry";
       description = "The composer-registry package to use.";
     };
