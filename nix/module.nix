@@ -65,6 +65,7 @@ in
       };
       serviceConfig = {
         ExecStart = "${cfg.package}/bin/composer-registry";
+        ExecReload = "${pkgs.util-linux}/bin/kill -s HUP -s USR1 -s USR2 $MAINPID";
         User = "composer-registry";
         Group = "composer-registry";
         StateDirectory = "composer-registry";
