@@ -61,5 +61,9 @@
         system:
         nixpkgs.legacyPackages.${system}.nixpkgs-fmt
       );
+
+      nixosModules = {
+        composer-registry = import ./nixos/module.nix;
+      };
     };
 }
