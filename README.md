@@ -26,6 +26,42 @@ docker run \
 
 `/storage` will be used to save the database and zips if mirroring is enabled
 
+### NixOS
+
+Import this as flake.
+
+```nix
+inputs = {
+    composer-registry = {
+      url = "github:shyim/composer-registry";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+}
+```
+
+Import the module on your system.
+
+```nix
+{ pkgs, inputs, ... }:
+{
+  imports = [
+    inputs.composer-registry.nixosModules.default
+  ];
+}
+```
+
+Activate the given service:
+
+```nix
+services.composer-registry = {
+    enable = true;
+
+    settings = {
+      base_url = "https://my.composer.io";
+    };
+};
+```
+
 ## Configuration
 
 The base config file looks like this:
