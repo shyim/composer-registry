@@ -15,7 +15,7 @@ in
 
     package = mkOption {
       type = types.package;
-      default = packages.${pkgs.system}.composer-registry;
+      default = pkgs.callPackage ./default.nix {};
       defaultText = "pkgs.composer-registry";
       description = "The composer-registry package to use.";
     };

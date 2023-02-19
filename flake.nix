@@ -30,11 +30,8 @@
           pkgs = nixpkgsFor.${system};
         in
         rec {
-          composer-registry = pkgs.buildGoModule {
-            pname = "composer-registry";
+          composer-registry = pkgs.callPackage ./nix/default.nix {
             inherit version;
-            src = ./.;
-            vendorSha256 = "sha256-jctlMpXVRBwDgfDPVeibV9hOywMboTxGNd4mxdffzWY=";
           };
           default = composer-registry;
         });
@@ -63,7 +60,7 @@
       );
 
       nixosModules = {
-        composer-registry = import ./nixos/module.nix { packages = self.packages; };
+        default = import ./nix/module.nix;
       };
     };
 }
