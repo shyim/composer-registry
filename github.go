@@ -71,7 +71,7 @@ func (g GithubProvider) Webhook(request *http.Request) error {
 			trimmedVersion = version
 		} else {
 			trimmedVersion = strings.ToLower(strings.TrimPrefix(event.GetRef(), "refs/heads/"))
-			version = "dev" + trimmedVersion
+			version = "dev-" + trimmedVersion
 		}
 
 		saveTag := g.generateSaveTag(event.GetRepo().GetOwner().GetName(), event.GetRepo().GetName(), trimmedVersion)

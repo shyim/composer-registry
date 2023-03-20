@@ -65,7 +65,7 @@ func (g GitlabProvider) Webhook(request *http.Request) error {
 		trimmedVersion = version
 	} else {
 		trimmedVersion = strings.ToLower(strings.TrimPrefix(event.Ref, "refs/heads/"))
-		version = "dev" + trimmedVersion
+		version = "dev-" + trimmedVersion
 	}
 
 	saveTag := g.generateSaveTag(event.ProjectID, trimmedVersion)
