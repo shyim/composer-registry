@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/subtle"
 	"net/http"
 	"strings"
 )
@@ -10,11 +11,11 @@ func validateRequest(r *http.Request) *ConfigUser {
 		return &ConfigUser{Rules: make([]ConfigUserRule, 0)}
 	}
 
-	token := strings.TrimPrefix(strings.ToLower(r.Header.Get("authorization")), "bearer ")
+	token := []byte(strings.TrimPrefix(strings.TrimPrefix(r.Header.Get("authorization"), "bearer "), "Bearer "))
 
 	var found *ConfigUser
 	for _, user := range config.Users {
-		if token == user.Token {
+		if subtle.ConstantTimeCompare(token, []byte(user.Token)) == 1 {
 			found = &user
 			break
 		}
