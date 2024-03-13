@@ -4,5 +4,5 @@ buildGoModule rec {
     pname = "composer-registry";
     inherit version;
     src = ../.;
-    vendorSha256 = "sha256-6A7RlhdnqZz/vLLF0JIxy9Z6b4OZA5Z7QG0KJ659ioQ=";
+    vendorSha256 = "sha256-nzh7+5GErnXu9BayhyLZh89jRrbxAD1oqLe5v+uP4uQ=";
 }
