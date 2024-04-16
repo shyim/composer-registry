@@ -6,10 +6,10 @@ toolchain go1.22.2
 
 require (
 	github.com/caarlos0/env/v11 v11.0.0
-	github.com/caarlos0/env/v7 v7.1.0
-	github.com/go-co-op/gocron v1.37.0
+	github.com/caarlos0/env/v11 v11.0.0
 	github.com/go-co-op/gocron/v2 v2.2.9
-	github.com/google/go-github/v50 v50.2.0
+	github.com/go-co-op/gocron/v2 v2.2.9
+	github.com/google/go-github/v61 v61.0.0
 	github.com/google/go-github/v61 v61.0.0
 	github.com/jinzhu/copier v0.4.0
 	github.com/julienschmidt/httprouter v1.3.0
