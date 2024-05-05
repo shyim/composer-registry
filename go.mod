@@ -8,15 +8,15 @@ require (
 	github.com/caarlos0/env/v11 v11.0.0
 	github.com/caarlos0/env/v7 v7.1.0
 	github.com/go-co-op/gocron v1.37.0
-	github.com/go-co-op/gocron/v2 v2.2.9
+	github.com/go-co-op/gocron/v2 v2.4.1
 	github.com/google/go-github/v50 v50.2.0
 	github.com/google/go-github/v61 v61.0.0
 	github.com/jinzhu/copier v0.4.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/xanzy/go-gitlab v0.102.0
+	github.com/xanzy/go-gitlab v0.103.0
 	go.etcd.io/bbolt v1.3.9
-	golang.org/x/oauth2 v0.19.0
+	golang.org/x/oauth2 v0.20.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
