@@ -2,9 +2,8 @@ package main
 
 import (
 	"net/http"
-	"time"
 
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 )
@@ -19,7 +18,7 @@ type TypeProvider interface {
 var providers = make(map[string]TypeProvider)
 
 func registerProviders(config *Config, router *httprouter.Router) {
-	s := gocron.NewScheduler(time.UTC)
+	s, _ := gocron.NewScheduler()
 
 	registeredProviders := make(map[string]bool)
 
@@ -42,11 +41,15 @@ func registerProviders(config *Config, router *httprouter.Router) {
 		}
 
 		if provider.CronSchedule != "" {
-			s.Cron(provider.CronSchedule).Do(providers[provider.Name].UpdateAll)
+			s.NewJob(
+				gocron.CronJob(provider.CronSchedule, false),
+				gocron.NewTask(providers[provider.Name].UpdateAll),
+				gocron.WithTags(provider.Name),
+			)
 		}
 	}
 
-	s.StartAsync()
+	s.Start()
 }
 
 func updateAll(force bool) {

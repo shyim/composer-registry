@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/caarlos0/env/v7"
+	"github.com/caarlos0/env/v11"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
