@@ -5,8 +5,8 @@ go 1.21
 toolchain go1.22.4
 
 require (
-	github.com/caarlos0/env/v11 v11.0.1
-	github.com/go-co-op/gocron/v2 v2.5.0
+	github.com/caarlos0/env/v11 v11.1.0
+	github.com/go-co-op/gocron/v2 v2.7.0
 	github.com/google/go-github/v50 v50.2.0
 	github.com/google/go-github/v62 v62.0.0
 	github.com/jinzhu/copier v0.4.0
